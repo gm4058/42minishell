@@ -44,6 +44,8 @@ static void	handle_error(t_grammar_status status, t_token *token_lst)
 
 void	syntax_print(t_grammar_status status, t_token **token_lst)
 {
+	if (!*token_lst)
+		return ;
 	if (status != GRAMMAR_OK)
 	{
 		g_exit_status = 2;
