@@ -6,7 +6,7 @@
 /*   By: dsagong <dsagong@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/03 16:11:42 by dsagong           #+#    #+#             */
-/*   Updated: 2025/09/08 17:20:57 by dsagong          ###   ########.fr       */
+/*   Updated: 2025/09/15 08:34:17 by dsagong          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,26 +41,6 @@ char	*expand_process(char *value, t_envp *envp_lst)
 	return (exp_data.result);
 }
 
-static int	expand_word_token(t_token *curr, t_envp *envp_lst)
-{
-	char	*temp;
-
-	if (!curr || !curr->value || !envp_lst || curr->type == T_END)
-	{
-		perror("unexpected error : expand_word_token");
-		return (0);
-	}
-	temp = expand_process(curr->value, envp_lst);
-	if (!temp)
-	{
-		perror("malloc fail : expand_process");
-		return (0);
-	}
-	free (curr->value);
-	curr->value = temp;
-	return (1);
-}
-
 int	has_whitespace(const char *s)
 {
 	t_quote_state	state;
@@ -81,45 +61,30 @@ int	has_whitespace(const char *s)
 	return (0);
 }
 
-typedef struct s_expand_ctx
-{
-	int	do_check_filename;
-	int	ambiguous_printed;
-}	t_expand_ctx;
-
-static void	print_ambiguous_error(char *value)
-{
-	ft_putstr_fd("minishell: ", 2);
-	ft_putstr_fd(value, 2);
-	ft_putendl_fd(": ambiguous redirect", 2);
-}
-
 //quote 일반 상태일때 whitespcae 존재시 파일문법 오류
-static int	handle_word(t_token *curr, t_envp *envp_lst, t_expand_ctx *ctx)
+static int	handle_word(t_token *curr, t_envp *envp_lst, int do_check_filename)
 {
 	char	*orig_value;
+	char	*expanded;
 
-	orig_value = ft_strdup(curr->value);
-	if (!orig_value)
+	orig_value = curr->value;
+	expanded = expand_process(curr->value, envp_lst);
+	if (!expanded)
 		return (0);
-	if (!expand_word_token(curr, envp_lst))
-		return (free(orig_value), 0);
-	if (ctx->do_check_filename)
+	if (do_check_filename)
 	{
-		if (curr->value[0] == '\0' || has_whitespace(curr->value))
+		if (expanded[0] == '\0' || has_whitespace(expanded))
 		{
 			curr->type = T_WRONG_FILNAME;
-			if (!ctx->ambiguous_printed)
-			{
-				print_ambiguous_error(orig_value);
-				ctx->ambiguous_printed = 1;
-			}
+			free(expanded);
 		}
 		else
+		{
 			curr->type = T_CORRECT_FILNAME;
-		ctx->do_check_filename = 0;
+			free(orig_value);
+			curr->value = expanded;
+		}
 	}
-	free(orig_value);
 	return (1);
 }
 
@@ -128,27 +93,24 @@ static int	handle_word(t_token *curr, t_envp *envp_lst, t_expand_ctx *ctx)
 //잘못된 파일인 경우 token type으로 명시
 int	expand_token(t_token *token_lst, t_envp *envp_lst)
 {
-	t_token			*curr;
-	t_expand_ctx	ctx;
+	t_token	*curr;
+	int		do_check_filename;
 
 	curr = token_lst;
-	ctx.do_check_filename = 0;
-	ctx.ambiguous_printed = 0;
+	do_check_filename = 0;
 	while (curr && curr->type != T_END)
 	{
 		if (curr->type == T_HEREDOC)
-			curr = curr->next;
+			do_check_filename = 0;
 		else if (curr->type == T_REDIR_IN || curr->type == T_REDIR_OUT
 			|| curr->type == T_APPEND)
-			ctx.do_check_filename = 1;
+			do_check_filename = 1;
 		else if (curr->type == T_WORD)
 		{
-			if (!handle_word(curr, envp_lst, &ctx))
+			if (!handle_word(curr, envp_lst, do_check_filename))
 				return (0);
-			ctx.do_check_filename = 0;
+			do_check_filename = 0;
 		}
-		else if (curr->type == T_PIPE)
-			ctx.ambiguous_printed = 0;
 		curr = curr->next;
 	}
 	return (1);
