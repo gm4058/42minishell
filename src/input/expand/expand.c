@@ -6,7 +6,7 @@
 /*   By: dsagong <dsagong@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/03 16:11:42 by dsagong           #+#    #+#             */
-/*   Updated: 2025/09/15 09:41:38 by dsagong          ###   ########.fr       */
+/*   Updated: 2025/09/15 09:43:43 by dsagong          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,10 +77,10 @@ static int	handle_word(t_token *curr, t_envp *envp_lst, int do_check_filename)
 		{
 			curr->type = T_WRONG_FILNAME;
 			free(expanded);
+			return (1);
 		}
 		else
 			curr->type = T_CORRECT_FILNAME;
-
 	}
 	free(orig_value);
 	curr->value = expanded;
