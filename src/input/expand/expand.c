@@ -6,7 +6,7 @@
 /*   By: dsagong <dsagong@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/03 16:11:42 by dsagong           #+#    #+#             */
-/*   Updated: 2025/09/15 08:34:17 by dsagong          ###   ########.fr       */
+/*   Updated: 2025/09/15 09:41:38 by dsagong          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,12 +79,11 @@ static int	handle_word(t_token *curr, t_envp *envp_lst, int do_check_filename)
 			free(expanded);
 		}
 		else
-		{
 			curr->type = T_CORRECT_FILNAME;
-			free(orig_value);
-			curr->value = expanded;
-		}
+
 	}
+	free(orig_value);
+	curr->value = expanded;
 	return (1);
 }
 
