@@ -6,7 +6,7 @@
 /*   By: dsagong <dsagong@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/05 16:02:32 by dsagong           #+#    #+#             */
-/*   Updated: 2025/09/08 17:41:56 by dsagong          ###   ########.fr       */
+/*   Updated: 2025/09/15 13:26:47 by dsagong          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,23 +16,24 @@
 #include "lexing.h"
 #include <stdio.h>
 
-static char	*remove_quotes_from_str(const char *s)
+static char *remove_quotes_from_str(const char *s)
 {
-	char	*result;
-	size_t	i;
+	char			*result;
+	size_t			i;
+	t_quote_state	state;
+	t_quote_state	next_state;
 
 	result = ft_strdup("");
 	if (!result)
 		return (NULL);
+	state = STATE_GENERAL;
 	i = 0;
 	while (s[i])
 	{
-		if (s[i] != '\'' && s[i] != '"')
-		{
+		next_state = state_machine(s[i], state);
+		if (state == next_state)
 			result = charjoin_and_free(result, s[i]);
-			if (!result)
-				return (NULL);
-		}
+		state = next_state;
 		i++;
 	}
 	return (result);
