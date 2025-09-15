@@ -6,7 +6,7 @@
 /*   By: dsagong <dsagong@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/03 16:11:42 by dsagong           #+#    #+#             */
-/*   Updated: 2025/09/15 09:43:43 by dsagong          ###   ########.fr       */
+/*   Updated: 2025/09/15 14:25:59 by dsagong          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -90,27 +90,53 @@ static int	handle_word(t_token *curr, t_envp *envp_lst, int do_check_filename)
 //변수 확장 및 filename 타입 세팅
 //파일이름 문법 오류시 에러메세지 파이프 별로 하나씩 출력
 //잘못된 파일인 경우 token type으로 명시
+static int	handle_expand_word(t_token *curr, t_envp *envp_lst,
+						int *do_check_filename, int *skip_expand)
+{
+	if (!*skip_expand)
+	{
+		if (!handle_word(curr, envp_lst, *do_check_filename))
+			return (0);
+	}
+	*skip_expand = 0;
+	*do_check_filename = 0;
+	return (1);
+}
+
+static void	update_flags(t_token *curr, int *do_check_filename,
+						int *skip_expand)
+{
+	if (curr->type == T_HEREDOC)
+	{
+		*skip_expand = 1;
+		*do_check_filename = 0;
+	}
+	else if (curr->type == T_REDIR_IN || curr->type == T_REDIR_OUT
+		|| curr->type == T_APPEND)
+		*do_check_filename = 1;
+}
+
 int	expand_token(t_token *token_lst, t_envp *envp_lst)
 {
 	t_token	*curr;
 	int		do_check_filename;
+	int		skip_expand;
 
 	curr = token_lst;
 	do_check_filename = 0;
+	skip_expand = 0;
 	while (curr && curr->type != T_END)
 	{
-		if (curr->type == T_HEREDOC)
-			do_check_filename = 0;
-		else if (curr->type == T_REDIR_IN || curr->type == T_REDIR_OUT
-			|| curr->type == T_APPEND)
-			do_check_filename = 1;
-		else if (curr->type == T_WORD)
+		if (curr->type == T_WORD)
 		{
-			if (!handle_word(curr, envp_lst, do_check_filename))
+			if (!handle_expand_word(curr, envp_lst,
+					&do_check_filename, &skip_expand))
 				return (0);
-			do_check_filename = 0;
 		}
+		else
+			update_flags(curr, &do_check_filename, &skip_expand);
 		curr = curr->next;
 	}
 	return (1);
 }
+
